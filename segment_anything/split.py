@@ -73,22 +73,20 @@ def main(img_path,sam_checkpoint,model_type,x,y,savepath):
         plt.axis('off')
         plt.savefig(savepath+'/res-{}.png'.format(i + 1))
         plt.show()
-    # for i, (mask, score) in enumerate(zip(masks, scores)):
-    #     print(mask)
-    #     mask = ~mask
-    #     mask = mask + 255
-    #     mask = np.repeat(mask[:, :, np.newaxis], 3, axis=2)
-    #     mask = mask.astype(np.uint8)
-    #     show_mask(mask, plt.gca())
-    #     show_points(input_point, input_label, plt.gca())
-    #     res = cv2.bitwise_and(image, mask)
-    #     res[res == 0] = 255
-    #     plt.imshow(res)
-    #     plt.axis('off')
-    #     plt.ylabel = [""]
-    #     plt.xlabel = [""]
-    #     plt.savefig('res-{}.png'.format(i + 1))
-    #     plt.show()
+    for i, (mask, score) in enumerate(zip(masks, scores)):
+        mask = ~mask
+        mask = mask + 255
+        mask = np.repeat(mask[:, :, np.newaxis], 3, axis=2)
+        mask = mask.astype(np.uint8)
+        res = cv2.bitwise_and(image, mask)
+        res[res == 0] = 255
+        plt.imshow(res)
+        plt.axis('off')
+        plt.ylabel = [""]
+        plt.xlabel = [""]
+        plt.savefig('./res-temp.png')
+        plt.show()
+
 
 
 if __name__ == '__main__':

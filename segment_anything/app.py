@@ -5,11 +5,10 @@ from click import DateTime
 from sqlalchemy.orm import backref
 from werkzeug.utils import secure_filename
 
-import predict
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 from flask_sqlalchemy import SQLAlchemy
-from segment_anything import app,accuracy,split_all,split,SplitAllOneTime
+from segment_anything import app,accuracy,split_all,split,SplitAllOneTime,predict
 
 from PIL import Image
 import base64
@@ -163,11 +162,11 @@ def onePointPredict():
     x = x*w*0.01
     y = y*h*0.01 #实际位置
 
-
     split.main(filenameUser,checkpoint,model_type,x,y,save_path)
 
-
-    return dict({'url': USERNAME + "/" + "res-1.png"})
+    res = predict.main("./res-temp.png")
+    print(res)
+    return dict({'url': USERNAME + "/" + "res-1.png","res":res})
 
 @app.route('/SeperateAll', methods=['POST'])
 def SeperateAll():
