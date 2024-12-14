@@ -9,6 +9,7 @@ from flask import Flask, request, jsonify
 from flask_cors import CORS
 from flask_sqlalchemy import SQLAlchemy
 from segment_anything import app,accuracy,split_all,split,SplitAllOneTime,predict
+from TrainDir.SplitClass import  train
 
 from PIL import Image
 import base64
@@ -164,8 +165,10 @@ def onePointPredict():
 
     split.main(filenameUser,checkpoint,model_type,x,y,save_path)
 
-    res = predict.main("./res-temp.png")
+    # res = predict.main("./res-temp.png")
+    res = predict.main(filenameUser)
     print(res)
+    print(dict({'url': USERNAME + "/" + "res-1.png","res":res}))
     return dict({'url': USERNAME + "/" + "res-1.png","res":res})
 
 @app.route('/SeperateAll', methods=['POST'])
@@ -184,7 +187,14 @@ def SeperateAll():
 
     return dict({'url': USERNAME + "/" + "all.png"})
 
-
+@app.route('/Train', methods=['POST'])
+def Train():
+    request_data = request.get_json()
+    ModelName = request_data['ModelName']
+    batch_size = request_data['batch_size']
+    lr = request_data['lr']
+    epoch = request_data['epoch']
+    train.main(batch_size, lr, epoch,USERNAME)
 
 
 

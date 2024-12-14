@@ -40,6 +40,7 @@ def main(img_path,sam_checkpoint,model_type,x,y,savepath):
 
     sam_checkpoint = "./sam_vit_h_4b8939.pth"
     model_type = "vit_h"
+    print(x,y)
 
     device = "cuda:0" if torch.cuda.is_available() else "cpu"
 
