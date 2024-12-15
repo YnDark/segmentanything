@@ -1,7 +1,10 @@
+import datetime
+import json
 import os
 
 from PIL.Image import Image
 from click import DateTime
+from sqlalchemy.dialects.oracle import NUMBER
 from sqlalchemy.orm import backref
 from werkzeug.utils import secure_filename
 
@@ -9,7 +12,7 @@ from flask import Flask, request, jsonify
 from flask_cors import CORS
 from flask_sqlalchemy import SQLAlchemy
 from segment_anything import app,accuracy,split_all,split,SplitAllOneTime,predict
-from TrainDir.SplitClass import  train
+import train
 
 from PIL import Image
 import base64
@@ -55,14 +58,14 @@ class Record(db.Model):
     __tablename__ = 'record'
     record_id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     user_id = db.Column(db.Integer, db.ForeignKey('user.user_id'), nullable=False)
-    model_id = db.Column(db.Integer, db.ForeignKey('model.model_id'), nullable=False)
-    res_path = db.Column(db.String(255), nullable=False)
+    # model_id = db.Column(db.Integer, db.ForeignKey('model.model_id'), nullable=False)
+    # res_path = db.Column(db.String(255), nullable=False)
     source_path = db.Column(db.String(255), nullable=False)
     time = db.Column(db.DateTime, nullable=False)
-    def __init__(self, user_id, model_id, res_path, source_path, time):
+    def __init__(self, user_id, source_path, time):
         self.user_id = user_id
-        self.model_id = model_id
-        self.res_path = res_path
+        # self.model_id = model_id
+        # self.res_path = res_path
         self.source_path = source_path
         self.time = time
 
@@ -73,8 +76,7 @@ class Model(db.Model):
     model_path = db.Column(db.String(255), nullable=False)
     epoch = db.Column(db.Integer, nullable=False)
     optimizer = db.Column(db.String(255), nullable=False)
-    def __init__(self, model_id, model_name, model_path, epoch, optimizer):
-        self.model_id = model_id
+    def __init__(self, model_name, model_path, epoch, optimizer):
         self.model_name = model_name
         self.model_path = model_path
         self.epoch = epoch
@@ -108,8 +110,6 @@ def signin():
     print("用户创建成功")
     return jsonify("用户创建成功")
 
-
-
 UPLOAD_PATH = os.path.dirname(r"D:\EdgeDownLoad\d2-admin-start-kit-master\d2-admin-start-kit-master\src\assets\userImg\\")
 
 @app.route('/addPic', methods=['POST'])
@@ -121,6 +121,10 @@ def addpic():
         os.mkdir(filenameUser)
     filenameFin = os.path.join(filenameUser,file.filename)
     file.save(filenameFin)
+
+    user = db.session.query(User).filter_by(email = USERNAME).first()
+    db.session.add(Record(int(user.user_id),USERNAME+"/"+file.filename,datetime.datetime.now()))
+    db.session.commit()
     return dict({'url': USERNAME+"/"+file.filename})
 
 @app.route('/deletePic', methods=['POST'])
@@ -194,7 +198,32 @@ def Train():
     batch_size = request_data['batch_size']
     lr = request_data['lr']
     epoch = request_data['epoch']
-    train.main(batch_size, lr, epoch,USERNAME)
+    optimizer = request_data['optimizer']
+    # 检查文件夹是否存在
+    folder_path = "./UserModel/"+USERNAME
+    if not os.path.exists(folder_path):
+        # 如果文件夹不存在，则创建它
+        os.makedirs(folder_path)
+        print(f"文件夹 {folder_path} 已创建。")
+    else:
+        print(f"文件夹 {folder_path} 已存在。")
+    train.main(batch_size, lr, epoch,USERNAME,optimizer,ModelName)
+    db.session.add(Model(ModelName,"./UserModel/"+USERNAME+"/"+ModelName,epoch,optimizer))
+    db.session.commit()
+
+@app.route('/getRecords', methods=['Get'])
+def getRecords():
+    user = db.session.query(User).filter_by(email = USERNAME).first()
+    db.session.commit()
+    records = db.session.query(Record).filter_by(user_id = user.user_id).all()
+    db.session.commit()
+    print(records)
+    return [{
+        "record_id":i.record_id,
+        "source_path":i.source_path,
+        "time":str(i.time),
+        "user_id":i.user_id
+    } for i in records]
 
 
 

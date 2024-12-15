@@ -18,7 +18,7 @@ def evaluate_metrics(val_labels, val_preds):
     print(f'Precision: {precision:.3f}, Recall: {recall:.3f}, F1 Score: {f1:.3f}')
 
 
-def main(batch_size,lr,epoch,username):
+def main(batch_size,lr,epoch,username,useroptimizer,ModelName):
     # 如果有NVIDA显卡，转到GPU训练，否则用CPU
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     print("using {} device.".format(device))
@@ -115,14 +115,17 @@ def main(batch_size,lr,epoch,username):
     # 定义adam优化器
     # params(iterable)：要训练的参数，一般传入的是model.parameters()
     # lr(float)：learning_rate学习率，也就是步长，默认：1e-3
-    optimizer = optim.Adam(params, lr=lr)
+    # 使用 getattr 来引用 optim 模块内部的同名属性
+    optimizer_func = getattr(optim, useroptimizer)
+    optimizer = optimizer_func(params, lr=lr)
 
     # 迭代次数（训练次数）
     epochs = epoch
     # 用于判断最佳模型
     best_acc = 0.0
     # 最佳模型保存地址
-    save_path = './UserModel'+username+'.pth'
+
+    save_path = './UserModel/'+username+'/'+ModelName+'.pth'
     train_steps = len(train_loader)
     # 在main函数中收集损失数据
     train_loss_history = []
@@ -229,7 +232,7 @@ def plot_loss(train_loss_history):
 
 def plot_accuracy(train_acc_history):
     plt.figure(figsize=(10, 5))
-    plt.plot(train_acc_history, label='Validation Accuracy')
+    plt.plot(train_acc_history,range(1,len(train_acc_history)), label='Validation Accuracy')
     plt.title('Validation Accuracy')
     plt.xlabel('Epochs')
     plt.ylabel('Accuracy')
